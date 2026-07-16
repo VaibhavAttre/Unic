@@ -1,0 +1,24 @@
+# Build outputs
+build/
+cmake-build-*/
+*.o
+*.obj
+*.elf
+*.hex
+*.bin
+*.map
+*.su
+*.lst
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
