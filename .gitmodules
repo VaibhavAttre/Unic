@@ -1,0 +1,6 @@
+[submodule "firmware/drivers/cmsis/cmsis-device-h5"]
+	path = firmware/drivers/cmsis/cmsis-device-h5
+	url = https://github.com/STMicroelectronics/cmsis-device-h5.git
+[submodule "firmware/drivers/cmsis/cmsis-core"]
+	path = firmware/drivers/cmsis/cmsis-core
+	url = https://github.com/STMicroelectronics/cmsis-core.git
