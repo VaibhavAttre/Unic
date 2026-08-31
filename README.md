@@ -7,7 +7,9 @@ Current phase plan: [`part1plan.md`](part1plan.md) — Week 1 project skeleton, 
 
 ## Status
 
-Week 1 in progress: repo scaffold. No firmware build yet.
+Board bring-up (M1) in progress. CMake build produces `unic_firmware.elf/.hex/.bin`.
+HSI 64 MHz clock setup and a polled USART3 driver are in place; `main()` emits a
+version banner on the ST-Link VCP at 115200 8N1. On-target verification pending.
 
 ## Toolchain
 
