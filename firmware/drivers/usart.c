@@ -48,3 +48,19 @@ void usart3_write_str(const char *s)
     {
     }
 }
+
+void usart3_write_hex16(uint16_t value)
+{
+    static const char digits[] = "0123456789abcdef";
+    char buf[7];
+
+    buf[0] = '0';
+    buf[1] = 'x';
+    for (uint32_t i = 0U; i < 4U; ++i)
+    {
+        buf[2U + i] = digits[(value >> ((3U - i) * 4U)) & 0xFU];
+    }
+    buf[6] = '\0';
+
+    usart3_write_str(buf);
+}

@@ -24,6 +24,18 @@ void rcc_init_hsi64(void)
     RCC->CFGR2 &= ~(RCC_CFGR2_HPRE | RCC_CFGR2_PPRE1);
 }
 
+void rcc_enable_gpioa(void)
+{
+    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
+    (void)RCC->AHB2ENR;
+}
+
+void rcc_enable_gpioc(void)
+{
+    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
+    (void)RCC->AHB2ENR;
+}
+
 void rcc_enable_gpiod(void)
 {
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;

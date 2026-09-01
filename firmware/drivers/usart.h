@@ -20,4 +20,8 @@ void usart3_init(uint32_t kernel_clk_hz, uint32_t baud);
  * the last byte has left the shift register. */
 void usart3_write_str(const char *s);
 
+/* Transmit a 16-bit value as a fixed 4-digit lowercase hex string with a
+ * "0x" prefix (e.g. "0x1c04"). */
+void usart3_write_hex16(uint16_t value);
+
 #endif

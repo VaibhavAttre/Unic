@@ -15,6 +15,12 @@
 /* Select HSI as system clock and force HSIDIV, HPRE and PPRE1 to /1. */
 void rcc_init_hsi64(void);
 
+/* Enable the peripheral bus clock for GPIO port A. */
+void rcc_enable_gpioa(void);
+
+/* Enable the peripheral bus clock for GPIO port C. */
+void rcc_enable_gpioc(void);
+
 /* Enable the peripheral bus clock for GPIO port D. */
 void rcc_enable_gpiod(void);
 

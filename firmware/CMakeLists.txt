@@ -5,6 +5,7 @@ add_executable(unic_firmware
     drivers/rcc.c
     drivers/gpio.c
     drivers/usart.c
+    drivers/eth_mdio.c
     drivers/cmsis/cmsis-device-h5/Source/Templates/system_stm32h5xx.c
     drivers/cmsis/cmsis-device-h5/Source/Templates/gcc/startup_stm32h563xx.s
 )
