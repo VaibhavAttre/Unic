@@ -11,22 +11,13 @@
 
 ## Proposal Summary
 
-This proposal defines a resume-grade embedded systems project that treats the STM32 Nucleo-H563ZI as a miniature network interface controller. The project emphasizes low-level Ethernet bring-up, DMA descriptor rings, packet-buffer ownership, zero-copy RX/TX paths, manual implementation of selected network protocols, and measurable performance. The final artifact is not a generic web server or example-based demo. It is a driver-oriented packet manager with documentation, benchmarks, visual telemetry, and a strong engineering narrative.
-
-The project is intentionally scoped to demonstrate skills valued by firmware, platform, SoC, networking, validation, and systems teams: register-level reasoning, hardware/software boundaries, memory movement, interrupt behavior, throughput/latency tradeoffs, and reproducible measurement.
-
-**Prepared for:** Vaibhav Attre  
-**Recommended positioning:** Firmware + systems + networking project for internship/full-time resume and GitHub portfolio
+This proposal is an embedded systems project that treats the STM32 Nucleo-H563ZI as a miniature network interface controller. The project emphasizes low-level Ethernet bring-up, DMA descriptor rings, packet-buffer ownership, zero-copy RX/TX paths, manual implementation of selected network protocols, and measurable performance.
 
 ## 1. Executive Summary
 
 uNIC is a bare-metal Ethernet packet manager for the STM32 Nucleo-H563ZI board. The system receives Ethernet frames using the STM32 Ethernet MAC and DMA, parses packets directly from DMA-owned buffers, applies programmable packet actions, and transmits responses through TX DMA buffers. The result is a compact but serious firmware project that resembles a simplified NIC driver and packet-processing datapath.
 
-The design avoids hiding all complexity behind a full TCP/IP stack. Instead, the firmware manually implements the core pieces needed for a useful network endpoint: Ethernet II frame parsing, ARP responses, ICMP echo replies, UDP echo/sink modes, packet counters, ring occupancy tracking, and host-driven benchmark tooling. This makes the project easy to explain in interviews while still being technically deep.
-
-### Key Differentiator
-
-The main differentiator is that this project focuses on the packet data path instead of a high-level network application. It demonstrates how packets physically move between Ethernet hardware, DMA descriptors, memory buffers, interrupts, and firmware logic.
+The design avoids hiding all complexity behind a full TCP/IP stack. Instead, the firmware manually implements the core pieces needed for a useful network endpoint: Ethernet II frame parsing, ARP responses, ICMP echo replies, UDP echo/sink modes, packet counters, ring occupancy tracking, and host-driven benchmark tooling.
 
 ### Primary Goals
 
