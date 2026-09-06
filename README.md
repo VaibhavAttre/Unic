@@ -3,7 +3,8 @@
 Bare-metal, register-level Ethernet packet manager for the STM32 Nucleo-H563ZI, treating the board as a miniature NIC: DMA descriptor rings, zero-copy RX/TX buffers, hand-implemented ARP/ICMP/UDP, a programmable match-action packet rule engine, and measured performance (packets/sec, cycles/packet, ring occupancy, drops).
 
 Full proposal: [`projplan.md`](projplan.md).
-Current phase plan: [`part1plan.md`](part1plan.md) — Week 1 project skeleton, board bring-up (M1), and the start of PHY link detection (M2).
+Completed phase plan: [`part1plan.md`](part1plan.md) — Week 1 project skeleton, board bring-up (M1), and the start of PHY link detection (M2).
+Current phase plan: [`part2plan.md`](part2plan.md) — Week 2 RMII/MAC bring-up, RX/TX DMA descriptor rings (M3, M4), and ARP + ICMP (M5).
 
 ## Status
 
