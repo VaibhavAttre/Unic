@@ -14,6 +14,28 @@
 /* PHY poll cadence for link-state changes. */
 #define UNIC_LINK_POLL_MS 200U
 
+/* Number of BSR reads taken per poll; the link bit is the majority vote so a
+ * single corrupted MDIO read cannot fake a transition. */
+#define UNIC_LINK_SAMPLES 5U
+
+/* Report the cause of the most recent reset over UART, then clear the flags so
+ * the next boot reports only its own cause. */
+static void report_reset_cause(void)
+{
+    uint32_t rsr = RCC->RSR;
+
+    usart3_write_str("reset:");
+    if (rsr & RCC_RSR_LPWRRSTF) { usart3_write_str(" lpwr"); }
+    if (rsr & RCC_RSR_WWDGRSTF) { usart3_write_str(" wwdg"); }
+    if (rsr & RCC_RSR_IWDGRSTF) { usart3_write_str(" iwdg"); }
+    if (rsr & RCC_RSR_SFTRSTF)  { usart3_write_str(" soft"); }
+    if (rsr & RCC_RSR_BORRSTF)  { usart3_write_str(" bor"); }
+    if (rsr & RCC_RSR_PINRSTF)  { usart3_write_str(" pin"); }
+    usart3_write_str("\n");
+
+    RCC->RSR |= RCC_RSR_RMVF;
+}
+
 /* Blocking millisecond delay built on SysTick as a free-running down-counter.
  * The core runs at 64 MHz (HSI, all prescalers /1), so a reload of 64000 ticks
  * spans 1 ms. */
@@ -46,6 +68,7 @@ int main(void)
 
     usart3_write_str("uNIC fw v" UNIC_FW_VERSION " | HSI 64MHz | "
                      __DATE__ " " __TIME__ "\n");
+    report_reset_cause();
 
     eth_mdio_init();
 
@@ -55,14 +78,24 @@ int main(void)
     usart3_write_hex16(eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_ID1));
     usart3_write_str(" id2=");
     usart3_write_hex16(eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_ID2));
+    usart3_write_str(" bsr=");
+    usart3_write_hex16(eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_BSR));
     usart3_write_str("\n");
 
     int prev_link = -1;
 
     for (;;)
     {
-        uint16_t bsr = eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_BSR);
-        int link = (bsr & PHY_BSR_LINK_UP) ? 1 : 0;
+        uint32_t up_votes = 0U;
+        for (uint32_t i = 0U; i < UNIC_LINK_SAMPLES; ++i)
+        {
+            if (eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_BSR) & PHY_BSR_LINK_UP)
+            {
+                ++up_votes;
+            }
+        }
+
+        int link = (up_votes * 2U > UNIC_LINK_SAMPLES) ? 1 : 0;
 
         if (link != prev_link)
         {

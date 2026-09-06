@@ -124,10 +124,10 @@ uint16_t eth_mdio_read(uint8_t phy_addr, uint8_t reg_addr)
     mdio_write_field(phy_addr & 0x1FU, 5U);  /* PHYAD             */
     mdio_write_field(reg_addr & 0x1FU, 5U);  /* REGAD             */
 
-    /* Turnaround: master releases MDIO for two clocks; the PHY pulls it low on
-     * the second before it starts shifting out data. */
+    /* Turnaround: the master releases MDIO and clocks once. The PHY takes the
+     * line over and drives it low during this bit, then shifts out data bit 15
+     * on the next clock. */
     mdio_release();
-    (void)mdio_clock_in();
     (void)mdio_clock_in();
 
     for (uint32_t i = 0U; i < 16U; ++i)
@@ -135,7 +135,10 @@ uint16_t eth_mdio_read(uint8_t phy_addr, uint8_t reg_addr)
         value = (uint16_t)((value << 1) | mdio_clock_in());
     }
 
+    /* One idle clock with MDIO released returns the bus to a known state before
+     * the next frame's preamble. */
     mdio_release();
+    (void)mdio_clock_in();
     return value;
 }
 
@@ -149,5 +152,7 @@ void eth_mdio_write(uint8_t phy_addr, uint8_t reg_addr, uint16_t value)
     mdio_write_field(0x2U, 2U);              /* TA = 10 (driven)  */
     mdio_write_field(value, 16U);            /* DATA              */
 
+    /* Release the bus and clock once so it idles cleanly before the next frame. */
     mdio_release();
+    (void)mdio_clock_in();
 }
