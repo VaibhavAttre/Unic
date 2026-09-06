@@ -8,7 +8,10 @@
 /*
  * Half-period spin count for the MDC bit clock. The LAN8742 accepts MDC up to
  * 2.5 MHz; this loop only needs to stay below that bound, not hit an exact
- * frequency, so the count is deliberately approximate for a 64 MHz core.
+ * frequency, so the count is deliberately approximate. At the 250 MHz core
+ * clock (see rcc_init_pll_250mhz()) this yields roughly 1 MHz MDC -- still
+ * comfortably under the 2.5 MHz limit; revisit MDIO_HALF_PERIOD_SPINS if the
+ * core clock changes again.
  */
 #define MDIO_HALF_PERIOD_SPINS 16U
 

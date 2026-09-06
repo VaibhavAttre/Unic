@@ -42,11 +42,11 @@ static void report_reset_cause(void)
 }
 
 /* Blocking millisecond delay built on SysTick as a free-running down-counter.
- * The core runs at 64 MHz (HSI, all prescalers /1), so a reload of 64000 ticks
- * spans 1 ms. */
+ * SysTick runs off the processor clock (RCC_SYSCLK_HZ, 250 MHz after the PLL
+ * switch), so a reload of RCC_SYSCLK_HZ/1000 ticks spans 1 ms. */
 static void delay_ms(uint32_t ms)
 {
-    SysTick->LOAD = (RCC_HSI_HZ / 1000U) - 1U;
+    SysTick->LOAD = (RCC_SYSCLK_HZ / 1000U) - 1U;
     SysTick->VAL = 0U;
     SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
 
@@ -100,6 +100,7 @@ static void report_autoneg_result(void)
 int main(void)
 {
     rcc_init_hsi64();
+    rcc_init_pll_250mhz();
     rcc_enable_gpioa();
     rcc_enable_gpioc();
     rcc_enable_gpiod();
@@ -108,7 +109,7 @@ int main(void)
     gpio_configure_usart3_pins();
     usart3_init(RCC_PCLK1_HZ, UNIC_USART3_BAUD);
 
-    usart3_write_str("uNIC fw v" UNIC_FW_VERSION " | HSI 64MHz | "
+    usart3_write_str("uNIC fw v" UNIC_FW_VERSION " | PLL 250MHz (HSI/16 x125 /2) | "
                      __DATE__ " " __TIME__ "\n");
     report_reset_cause();
 
