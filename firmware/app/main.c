@@ -18,6 +18,11 @@
  * single corrupted MDIO read cannot fake a transition. */
 #define UNIC_LINK_SAMPLES 5U
 
+/* Upper bound on the wait for auto-negotiation to converge after link-up. A
+ * healthy link resolves in well under a second; the cap stops a PHY that never
+ * completes from stalling link-state polling. */
+#define UNIC_AUTONEG_TIMEOUT_MS 3000U
+
 /* Report the cause of the most recent reset over UART, then clear the flags so
  * the next boot reports only its own cause. */
 static void report_reset_cause(void)
@@ -53,6 +58,43 @@ static void delay_ms(uint32_t ms)
     }
 
     SysTick->CTRL = 0U;
+}
+
+/* Wait (bounded) for auto-negotiation to finish after a link-up, then report the
+ * resolved speed and duplex from the LAN8742 status register. This is the datum
+ * the Ethernet MAC needs to configure the RMII path once it is brought up. */
+static void report_autoneg_result(void)
+{
+    uint32_t waited_ms = 0U;
+
+    while ((eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_BSR) & PHY_BSR_AUTONEG_DONE) == 0U)
+    {
+        if (waited_ms >= UNIC_AUTONEG_TIMEOUT_MS)
+        {
+            usart3_write_str("autoneg: timeout\n");
+            return;
+        }
+        delay_ms(50U);
+        waited_ms += 50U;
+    }
+
+    uint16_t scsr = eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_PSCSR);
+    const char *mode;
+
+    switch (scsr & PHY_PSCSR_SPEED_MASK)
+    {
+    case PHY_PSCSR_SPEED_10_HD:  mode = "10/half";  break;
+    case PHY_PSCSR_SPEED_10_FD:  mode = "10/full";  break;
+    case PHY_PSCSR_SPEED_100_HD: mode = "100/half"; break;
+    case PHY_PSCSR_SPEED_100_FD: mode = "100/full"; break;
+    default:                     mode = "unknown";  break;
+    }
+
+    usart3_write_str("autoneg: done ");
+    usart3_write_str(mode);
+    usart3_write_str(" lpa=");
+    usart3_write_hex16(eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_ANLPAR));
+    usart3_write_str("\n");
 }
 
 int main(void)
@@ -100,6 +142,10 @@ int main(void)
         if (link != prev_link)
         {
             usart3_write_str(link ? "link up\n" : "link down\n");
+            if (link)
+            {
+                report_autoneg_result();
+            }
             prev_link = link;
         }
 

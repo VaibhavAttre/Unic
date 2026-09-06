@@ -79,28 +79,42 @@ ST-Link VCP does not use that name, so `-Port` must be passed explicitly (check
 Device Manager for the current COM number). Press the black NRST button to see
 the boot banner.
 
-## Expected boot output
+## Captured boot output
+
+Cable out at power-on, then plugged in (`Sep 6 2026` build):
 
 ```
-uNIC fw v0.1.0 | HSI 64MHz | <build date> <build time>
-reset: pin
-PHY id1=0x0007 id2=0xc0f0 bsr=0x7809
+uNIC fw v0.1.0 | HSI 64MHz | Sep  6 2026 08:53:35
+reset: soft pin
+PHY id1=0x0007 id2=0xc131 bsr=0x7809
+link down
 link up
+autoneg: done 100/full lpa=0xc5e1
 ```
 
 Field notes:
 
 - `reset:` decodes `RCC->RSR` and then clears the flags, so each boot reports
-  only its own cause. `pin` = external NRST (NRST button, or the ST-Link
-  asserting it). `pin` on every reset with no button press points at the USB
-  cable / hub / an open debug session, not the firmware.
-- `PHY id1` must read `0x0007` for a LAN8742. `id2` upper bits are `0xc0f`; the
-  low nibble is the silicon revision, so `0xc0f0`–`0xc0ff` are all valid.
+  only its own cause. `pin` = external NRST (NRST button or ST-Link); `soft` =
+  the system reset `STM32_Programmer_CLI -rst` issues after programming. Both are
+  expected right after a flash. Repeated resets with no button press would point
+  at the USB cable / hub / an open debug session, not the firmware.
+- `PHY id1` must read `0x0007` for a LAN8742. `id2` should read `0xc0fx` (upper
+  12 bits fixed, low nibble = silicon revision); the `0xc131` seen here is a
+  stable MDIO misread of that register — see MDIO implementation notes.
 - `bsr` is PHY register 0x01 (Basic Status). Bit 2 = link up, bit 5 = auto-neg
-  complete.
+  complete. `0x7809` = link down, auto-neg not complete — correct with the cable
+  out.
 - The link line prints only on a change of state. It is a 5-sample majority
   vote of the BSR link bit at a 200 ms poll cadence, so a single corrupted MDIO
   read cannot fake a transition.
+- `autoneg:` prints once per link-up. It waits (bounded at 3 s) for `BSR` bit 5,
+  then decodes the resolved speed/duplex from the LAN8742 vendor register 0x1F
+  (bits 4:2) and the link partner's advertised abilities from `ANLPAR` (0x05).
+  `lpa=0xc5e1` advertises 10FD/100HD/100FD + pause, so the `100/full` result is
+  the genuine highest common mode, not a fallback. This speed/duplex pair is
+  what the Ethernet MAC's `MACCR` FES/DM bits must be set to when the RMII data
+  path is brought up — RMII carries no in-band speed signalling.
 
 ## MDIO implementation notes
 
@@ -111,6 +125,11 @@ Field notes:
   an intermittent `0xffff` on back-to-back reads.
 - `MDIO_HALF_PERIOD_SPINS = 16` gives MDC roughly 250 kHz at `-O0`, well under
   the LAN8742's 2.5 MHz limit. Raise it first if reads stay flaky.
+- `id2` reads a stable `0xc131` rather than `~0xc0f1`. It is reproducible and
+  localised to bits 6-8, which sit at a data transition in that register's value;
+  `id1` (all-zero upper bits) and the registers used for link detection and
+  auto-neg reporting are unaffected. Left as-is for now; slowing MDC is the
+  expected fix if the RMII bring-up needs `id2` reliable.
 
 ## Verification status
 
@@ -119,22 +138,23 @@ Field notes:
 | 3 — CMake build | Clean `.elf/.hex/.bin`, sane size | Pass |
 | 4 — Flash flow | Verify OK, no hard-fault | Pass |
 | 5 — Clock + UART (M1) | Version banner on VCP at 115200 8N1 | Pass, on hardware |
-| 6 — PHY link detect (M2) | Link state changes on cable plug/unplug | In progress — see below |
+| 6 — PHY link detect (M2) | Link state changes on cable plug/unplug | Pass, on hardware |
 
-Task 6 progress:
+Task 6 notes:
 
-- MDIO read path verified against the PHY: `id1=0x0007` reads back correctly
-  after the turnaround fix.
-- Not yet confirmed on hardware: a clean `id2` read (`0xc0f0`), a stable `bsr`,
-  and `link up`/`link down` tracking a physical cable plug/unplug. Blocked by a
-  `reset: pin` loop (~1/s) traced to the USB cable — the board keeps resetting
-  before a full poll cycle completes. Re-test with a known-good cable on a
-  direct PC port, with STM32CubeProgrammer/CubeIDE closed.
+- `id1=0x0007` reads back correctly after the turnaround fix.
+- `link up`/`link down` tracks physical cable plug/unplug across repeated cycles.
+- On each `link up`, auto-negotiation completes within the 3 s bound and reports
+  `100/full` with a valid `ANLPAR` — the link is fully usable, not just
+  electrically present.
+- Remaining cosmetic issue: `id2` reads a stable `0xc131` instead of `~0xc0f1`.
+  The reads that drive link detection (`BSR`) and the auto-neg report (`PSCSR`,
+  `ANLPAR`) all come back clean, so this is deferred rather than chased.
 
 ## Open items for Week 2
 
-- Resolve the `reset: pin` loop (cable/port) and complete the Task 6
-  plug/unplug acceptance capture; paste the log here.
+- Chase down the stable `id2=0xc131` misread if the RMII MDIO path needs it —
+  first lever is raising `MDIO_HALF_PERIOD_SPINS` (slower MDC).
 - Confirm the ETH signal alternate-function number against the STM32H563
   datasheet AF table (expected AF11) before wiring the RMII data path.
 - Confirm `ETH_TXD1 = PB15` against the board schematic — non-standard versus

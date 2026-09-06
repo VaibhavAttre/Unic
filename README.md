@@ -7,12 +7,15 @@ Current phase plan: [`part1plan.md`](part1plan.md) — Week 1 project skeleton, 
 
 ## Status
 
-Board bring-up (M1) complete. CMake build produces `unic_firmware.elf/.hex/.bin`;
-`tools/flash.ps1` programs the board over SWD. HSI 64 MHz clock setup and a polled
-USART3 driver are in place, and `main()` emits a version banner on the ST-Link VCP
-at 115200 8N1, verified on hardware (`tools/monitor.ps1`).
+Board bring-up (M1) and PHY link detection (M2) complete, both verified on
+hardware. CMake build produces `unic_firmware.elf/.hex/.bin`; `tools/flash.ps1`
+programs the board over SWD. HSI 64 MHz clock setup and a polled USART3 driver
+are in place, `main()` emits a version banner on the ST-Link VCP at 115200 8N1,
+and a bit-banged MDIO master reads the LAN8742: link up/down tracks the cable and
+each link-up reports the negotiated speed/duplex. See
+[`docs/week1_bringup.md`](docs/week1_bringup.md).
 
-Next: PHY link detection (M2) over MDIO.
+Next: RMII data path and the Ethernet MAC/DMA descriptor rings.
 
 ## Toolchain
 
