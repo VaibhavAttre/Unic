@@ -51,4 +51,14 @@ void rcc_enable_gpiog(void);
 /* Enable the peripheral bus clock for USART3. */
 void rcc_enable_usart3(void);
 
+/* Enable the peripheral bus clock for the SBS block (holds ETH_SEL_PHY,
+ * the RMII/MII interface selector read by the MAC at reset). */
+void rcc_enable_sbs(void);
+
+/* Enable the AHB1 clocks for the Ethernet MAC/MTL/DMA subsystem (ETHEN) and
+ * its TX/RX clock domains (ETHTXEN/ETHRXEN). All three are enabled together:
+ * ST's own HAL brings them up as a unit, and the TX/RX domains are needed
+ * for the DMA reset in eth_mac_init() to complete, not just for data flow. */
+void rcc_enable_eth(void);
+
 #endif

@@ -4,12 +4,18 @@
 #include "gpio.h"
 #include "usart.h"
 #include "eth_mdio.h"
+#include "eth_mac.h"
 
 #define UNIC_FW_VERSION "0.1.0"
 #define UNIC_USART3_BAUD 115200U
 
 /* LAN8742 station address on the Nucleo-H563ZI (RMII address straps = 0). */
 #define UNIC_PHY_ADDR 0U
+
+/* Locally-administered unicast MAC address (U/L bit set, multicast bit
+ * clear in the first octet): no vendor OUI is assigned to this project, so
+ * this avoids colliding with a real one on the wire. */
+static const uint8_t UNIC_MAC_ADDR[6] = { 0x02U, 0x55U, 0x4EU, 0x49U, 0x43U, 0x01U };
 
 /* PHY poll cadence for link-state changes. */
 #define UNIC_LINK_POLL_MS 200U
@@ -102,17 +108,26 @@ int main(void)
     rcc_init_hsi64();
     rcc_init_pll_250mhz();
     rcc_enable_gpioa();
+    rcc_enable_gpiob();
     rcc_enable_gpioc();
     rcc_enable_gpiod();
+    rcc_enable_gpiog();
     rcc_enable_usart3();
+    rcc_enable_sbs();
+    rcc_enable_eth();
 
     gpio_configure_usart3_pins();
+    /* Must run before eth_mac_init(): its DMA reset needs ETH_REF_CLK
+     * already muxed in and receiving the PHY's clock. This also hands
+     * PC1/PA2 to the MAC's hardware MDIO block, which eth_mdio.c now uses. */
+    gpio_configure_rmii_pins();
     usart3_init(RCC_PCLK1_HZ, UNIC_USART3_BAUD);
 
     usart3_write_str("uNIC fw v" UNIC_FW_VERSION " | PLL 250MHz (HSI/16 x125 /2) | "
                      __DATE__ " " __TIME__ "\n");
     report_reset_cause();
 
+    eth_mac_init(UNIC_MAC_ADDR);
     eth_mdio_init();
 
     /* Identify the PHY once so a broken MDIO path is obvious in the log:

@@ -60,6 +60,18 @@ void rcc_enable_usart3(void)
     (void)RCC->APB1LENR;
 }
 
+void rcc_enable_sbs(void)
+{
+    RCC->APB3ENR |= RCC_APB3ENR_SBSEN;
+    (void)RCC->APB3ENR;
+}
+
+void rcc_enable_eth(void)
+{
+    RCC->AHB1ENR |= RCC_AHB1ENR_ETHEN | RCC_AHB1ENR_ETHTXEN | RCC_AHB1ENR_ETHRXEN;
+    (void)RCC->AHB1ENR;
+}
+
 void rcc_init_pll_250mhz(void)
 {
     /* VOS0 is required above 190 MHz (the flash-latency table below is keyed
