@@ -30,6 +30,12 @@ void rcc_enable_gpioa(void)
     (void)RCC->AHB2ENR;
 }
 
+void rcc_enable_gpiob(void)
+{
+    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
+    (void)RCC->AHB2ENR;
+}
+
 void rcc_enable_gpioc(void)
 {
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
@@ -39,6 +45,12 @@ void rcc_enable_gpioc(void)
 void rcc_enable_gpiod(void)
 {
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;
+    (void)RCC->AHB2ENR;
+}
+
+void rcc_enable_gpiog(void)
+{
+    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOGEN;
     (void)RCC->AHB2ENR;
 }
 

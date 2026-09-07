@@ -36,11 +36,17 @@ void rcc_init_pll_250mhz(void);
 /* Enable the peripheral bus clock for GPIO port A. */
 void rcc_enable_gpioa(void);
 
+/* Enable the peripheral bus clock for GPIO port B. */
+void rcc_enable_gpiob(void);
+
 /* Enable the peripheral bus clock for GPIO port C. */
 void rcc_enable_gpioc(void);
 
 /* Enable the peripheral bus clock for GPIO port D. */
 void rcc_enable_gpiod(void);
+
+/* Enable the peripheral bus clock for GPIO port G. */
+void rcc_enable_gpiog(void);
 
 /* Enable the peripheral bus clock for USART3. */
 void rcc_enable_usart3(void);
