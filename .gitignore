@@ -22,3 +22,7 @@ CMakeUserPresets.json
 # OS
 Thumbs.db
 .DS_Store
+
+# Python / pytest
+__pycache__/
+.pytest_cache/

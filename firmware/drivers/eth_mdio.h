@@ -7,8 +7,8 @@
  * IEEE 802.3 Clause 22 station management (MDIO/MDC) via the MAC's hardware
  * MACMDIOAR/MACMDIODR interface. MDC is driven on PC1, MDIO on PA2, muxed to
  * AF11 by gpio_configure_rmii_pins() -- these were bit-banged plain-GPIO in
- * Week 1; the swap to hardware MDIO removes the bit-bang timing margin behind
- * Week 1's occasional id2=0xc131 misread. The public API (eth_mdio_init/
+ * Week 1; the swap to hardware MDIO removes the bit-bang timing margin. (id2=0xc131
+ * is the correct LAN8742A rev-1 ID, not a misread.) The public API (eth_mdio_init/
  * eth_mdio_read/eth_mdio_write) is unchanged so main.c's link/auto-neg
  * polling and the PHY_REG_ and PHY_BSR_ constants below need no changes.
  *

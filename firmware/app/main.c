@@ -131,7 +131,7 @@ int main(void)
     eth_mdio_init();
 
     /* Identify the PHY once so a broken MDIO path is obvious in the log:
-     * a healthy LAN8742 reports id1=0x0007, id2 upper bits 0xc0f0. */
+     * a healthy LAN8742 reports id1=0x0007, id2 0xc13x (low nibble = silicon revision). */
     usart3_write_str("PHY id1=");
     usart3_write_hex16(eth_mdio_read(UNIC_PHY_ADDR, PHY_REG_ID1));
     usart3_write_str(" id2=");

@@ -23,8 +23,11 @@ register access (no ST HAL/LL).
 | ETH_MDC | PC1 | GPIO output, push-pull |
 | ETH_MDIO | PA2 | GPIO output, open-drain + pull-up |
 
-MDC/MDIO are bit-banged as an IEEE 802.3 Clause 22 station-management master;
-the Ethernet MAC and the RMII data path are not brought up in Week 1.
+In Week 1, MDC/MDIO were bit-banged as an IEEE 802.3 Clause 22 station-management
+master; the Ethernet MAC and the RMII data path were not brought up. (Superseded
+in Week 2: both pins are now AF11 and driven by the MAC's hardware
+station-management block — see the Week 2 open-items list below. The table above
+is the Week 1 configuration.)
 
 ## Prerequisites
 
@@ -99,9 +102,9 @@ Field notes:
   the system reset `STM32_Programmer_CLI -rst` issues after programming. Both are
   expected right after a flash. Repeated resets with no button press would point
   at the USB cable / hub / an open debug session, not the firmware.
-- `PHY id1` must read `0x0007` for a LAN8742. `id2` should read `0xc0fx` (upper
-  12 bits fixed, low nibble = silicon revision); the `0xc131` seen here is a
-  stable MDIO misread of that register — see MDIO implementation notes.
+- `PHY id1` must read `0x0007` for a LAN8742. `id2` reads `0xc131`: the LAN8742A
+  ID is `0xC13x` (low nibble = silicon revision), so this is revision 1. It is
+  correct, not a misread (see MDIO implementation notes).
 - `bsr` is PHY register 0x01 (Basic Status). Bit 2 = link up, bit 5 = auto-neg
   complete. `0x7809` = link down, auto-neg not complete — correct with the cable
   out.
@@ -125,11 +128,10 @@ Field notes:
   an intermittent `0xffff` on back-to-back reads.
 - `MDIO_HALF_PERIOD_SPINS = 16` gives MDC roughly 250 kHz at `-O0`, well under
   the LAN8742's 2.5 MHz limit. Raise it first if reads stay flaky.
-- `id2` reads a stable `0xc131` rather than `~0xc0f1`. It is reproducible and
-  localised to bits 6-8, which sit at a data transition in that register's value;
-  `id1` (all-zero upper bits) and the registers used for link detection and
-  auto-neg reporting are unaffected. Left as-is for now; slowing MDC is the
-  expected fix if the RMII bring-up needs `id2` reliable.
+- `id2` reads `0xc131`. This was initially suspected to be a bit-bang misread
+  because `0xc0f1` was expected, but that is the LAN8720's ID, not the LAN8742A's
+  (`0xC13x`). The same `0xc131` reads back through the Week 2 hardware MDIO block,
+  which rules out a bit-bang timing cause. No bug.
 
 ## Verification status
 
@@ -147,23 +149,29 @@ Task 6 notes:
 - On each `link up`, auto-negotiation completes within the 3 s bound and reports
   `100/full` with a valid `ANLPAR` — the link is fully usable, not just
   electrically present.
-- Remaining cosmetic issue: `id2` reads a stable `0xc131` instead of `~0xc0f1`.
-  The reads that drive link detection (`BSR`) and the auto-neg report (`PSCSR`,
-  `ANLPAR`) all come back clean, so this is deferred rather than chased.
+- `id2` reads `0xc131` — the correct LAN8742A ID (revision 1); the `0xc0f1` I
+  first expected was the LAN8720's. Not a bug.
 
 ## Open items for Week 2
 
-- Chase down the stable `id2=0xc131` misread if the RMII MDIO path needs it —
-  first lever is raising `MDIO_HALF_PERIOD_SPINS` (slower MDC).
-- Confirm the ETH signal alternate-function number against the STM32H563
-  datasheet AF table (expected AF11) before wiring the RMII data path.
-- Confirm `ETH_TXD1 = PB15` against the board schematic — non-standard versus
-  the H7-Nucleo routing.
-- Resolve the ETH_REF_CLK source (PA1 external vs. MCO) for the RMII 50 MHz
-  reference before DMA bring-up.
+- DONE (Week 2): PHY management moved off the bit-banged GPIO master onto the
+  Ethernet MAC's hardware station-management interface (`MACMDIOAR` /
+  `MACMDIODR`) in `firmware/drivers/eth_mdio.c`; the public API and `main.c` are
+  unchanged. MDC = 250 MHz / 124 ~= 2.02 MHz. Verified on hardware: id1/id2/bsr,
+  link up and the auto-neg report match Week 1.
+- ETH alternate-function number: AF11 is used for all 9 RMII/MDIO pins. MDC/MDIO
+  work on hardware with it; the RMII data pins are not yet exercised. Not
+  re-checked against the datasheet AF table.
+- Still open: confirm `ETH_TXD1 = PB15` against the board schematic —
+  non-standard versus the H7-Nucleo routing. Untestable until TX is enabled.
+- ETH_REF_CLK source: resolved as PHY-sourced. The LAN8742A runs from its own
+  25 MHz crystal and drives the 50 MHz RMII reference out to PA1 (input, AF11),
+  so no MCU MCO output or PLL tap is needed. Confirmed on hardware:
+  `eth_mac_init()`'s DMA reset (`DMAMR.SWR`) completes, and it hangs without a
+  live REF_CLK. Schematic solder-bridge not independently checked.
 - Determine PHY reset wiring (dedicated GPIO vs. tied to system NRST); a
   software reset via PHY BCR bit 15 works regardless.
-- Move off HSI to a PLL clock configuration once RMII timing needs it.
+- DONE (Week 2): system clock moved to PLL1 at 250 MHz (HSI/16 x125 /2).
 
 ## Hardware setup photo
 
